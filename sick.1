@@ -1,0 +1,18 @@
+.Dd 2016-05-03
+.Dt SICK 1
+.Os POSIX.1-2008
+.Sh NAME
+.Nm sick
+.Nd sign/check files using ed25519 signatures
+.Sh SYNOPSIS
+.Nm sick
+.Op Fl g Ar ALIAS
+.Sh DESCRIPTION
+.Nm
+generates key pairs, signs, checks and remove signatures for a file or stream.
+.Bl -tag -width Ds
+.It Fl g Ar ALIAS
+Generates an ed25519 key pairs: `ALIAS.key` and `ALIAS.pub`
+.El
+.Sh AUTHORS
+.An Willy Goiffon Aq Mt willy@mailoo.org

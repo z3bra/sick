@@ -1,0 +1,11 @@
+# sick
+
+Sign and check files using ed25519.
+sick(1) will let you generate private/public key pairs, sign files using your
+private key, and check a file signature using public keys stored in a keyring.
+
+## Generating keys
+
+To generate a key pair, run
+
+	$ sick -g alice
