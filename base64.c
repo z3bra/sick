@@ -6,10 +6,18 @@
 
 #include "base64.h"
 
+const char base64_table[] = {
+	'A','B','C','D','E','F','G','H','I','J','K','L','M',
+	'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+	'a','b','c','d','e','f','g','h','i','j','k','l','m',
+	'n','o','p','q','r','s','t','u','v','w','x','y','z',
+	'0','1','2','3','4','5','6','7','8','9','+','/'
+};
+
 size_t
 base64_encode(char **buf, const unsigned char *msg, size_t len)
 {
-	int i, j;
+	size_t i, j;
 	uint64_t b64;
 	size_t size;
 
@@ -40,28 +48,30 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 {
 	size_t size;
 
-	size = 1 + (len / 4 ) * 3;
+	size = 1 + (len * 3) / 4;
 	size -= msg[len - 1] == '=' ? 1 : 0;
 	size -= msg[len - 2] == '=' ? 1 : 0;
 
-	printf("base64: %lu bytes\n", len);
-	printf("clear : %lu bytes\n", size);
+	*buf = malloc(size);
+	memset(*buf, 0, size);
 
 	return size;
 }
 
+/*
 int
 main(int argc, char *argv[])
 {
 	int i;
 	size_t len, n;
-	char *buf = NULL, in[59];
+	char *buf = NULL, in[79];
 
-	while ((n = read(0, in, 57)) > 0) {
-		in[58] = 0;
-		len = base64_encode(&buf, in, n);
+	while ((n = read(0, in, 77)) > 0) {
+		in[78] = 0;
+		len = base64_decode(&buf, in, n);
 		puts(buf);
 		free(buf);
 	}
 	return 0;
 }
+*/
