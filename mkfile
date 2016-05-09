@@ -2,7 +2,7 @@
 
 ED25519_SRC = `{find ed25519/src -name '*.c'}
 
-SRC = sick.c ${ED25519_SRC}
+SRC = sick.c base64.c ${ED25519_SRC}
 OBJ = ${SRC:%.c=%.o}
 
 sick: $OBJ
