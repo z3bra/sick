@@ -6,6 +6,8 @@
 
 #include "base64.h"
 
+#define BASE64_FOLD 76
+
 const char base64_table[] = {
 	'A','B','C','D','E','F','G','H','I','J','K','L','M',
 	'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
@@ -58,20 +60,17 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 	return size;
 }
 
-/*
-int
-main(int argc, char *argv[])
+size_t
+base64_fold(FILE *fp, char *base64, size_t len, size_t fold)
 {
-	int i;
-	size_t len, n;
-	char *buf = NULL, in[79];
+	size_t i;
 
-	while ((n = read(0, in, 77)) > 0) {
-		in[78] = 0;
-		len = base64_decode(&buf, in, n);
-		puts(buf);
-		free(buf);
+	fold = fold > 0 ? fold : BASE64_FOLD;
+
+	for (i = 0; i < len; i += BASE64_FOLD) {
+		fwrite(base64+i, 1, i+BASE64_FOLD > len ? len - i : BASE64_FOLD, fp);
+		fwrite("\n", 1, 1, fp);
 	}
-	return 0;
+
+	return fold;
 }
-*/
