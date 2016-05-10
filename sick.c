@@ -19,6 +19,7 @@ enum {
 
 static void usage();
 static int createkeypair(const char *);
+static int sign(FILE *fp, FILE *key);
 
 char *argv0;
 
