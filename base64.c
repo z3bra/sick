@@ -9,6 +9,8 @@
 
 #define BASE64_FOLD 76
 
+uint8_t base64_index(const char *, char);
+
 const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 uint8_t
