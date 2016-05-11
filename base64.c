@@ -1,7 +1,7 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -9,20 +9,20 @@
 
 #define BASE64_FOLD 76
 
-uint8_t base64_index(const char *, char);
+int base64_index(const char *, char);
 
 const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-uint8_t
+int
 base64_index(const char *base64, char ch)
 {
 	uint8_t idx = 0;
 
 	for (idx = 0; idx < 64; idx++)
 		if (base64[idx] == ch)
-			break;
+			return idx;
 
-	return idx;
+	return -1;
 }
 
 
@@ -34,7 +34,7 @@ base64_encode(char **buf, const unsigned char *msg, size_t len)
 	size_t size;
 
 	/* calculate size needed for the base64 buffer */
-	size = 1 + (len / 3) * 4 + (len % 3 ? 4 : 0);
+	size = (len / 3) * 4 + (len % 3 ? 4 : 0);
 
 	*buf = malloc(size);
 	memset(*buf, 0, size);
@@ -67,6 +67,8 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 	size -= msg[len - 2] == '=' ? 1 : 0;
 
 	*buf = malloc(size);
+	if (*buf == NULL)
+		return 0;
 	memset(*buf, 0, size);
 
 	for (i = j = 0; i < len; i+=4) {
