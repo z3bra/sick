@@ -8,8 +8,8 @@
 #include "base64.h"
 #include "ed25519.h"
 
-#define SIGBEGIN "\n-----BEGIN ED25519 SIGNATURE-----\n"
-#define SIGEND "-----END ED25519 SIGNATURE-----\n"
+#define SIGBEGIN "-----BEGIN ED25519 SIGNATURE-----\n"
+#define SIGEND   "-----END ED25519 SIGNATURE-----\n"
 
 enum {
 	ACT_NONE,
