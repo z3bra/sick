@@ -177,5 +177,10 @@ main(int argc, char *argv[])
 		}
 	}
 
+	if (fp)
+		fclose(fp);
+	if (key)
+		fclose(key);
+
 	return 0;
 }
