@@ -20,6 +20,7 @@ enum {
 static void usage();
 static size_t bufferize(char **buf, FILE *fp);
 static size_t extractmsg(unsigned char *msg[], char *buf);
+static size_t extractsig(unsigned char *sig[], char *buf);
 static int createkeypair(const char *);
 static int sign(FILE *fp, FILE *key);
 
@@ -71,6 +72,44 @@ extractmsg(unsigned char **msg, char *buf)
 	len = sig - buf;
 	*msg = malloc(len);
 	memcpy(*msg, buf, len);
+
+	return len;
+}
+
+static size_t
+extractsig(unsigned char **sig, char *buf)
+{
+	off_t i;
+	size_t n, len = 0;
+	char *begin, *end, *tmp;
+	unsigned char base64[76];
+
+	begin = strstr(buf, SIGBEGIN) + strlen(SIGBEGIN);
+	end   = strstr(buf, SIGEND);
+
+	if (!(begin && end)) {
+		puts("Signature not found");
+		return 0;
+	}
+
+	*sig = malloc(64);
+	if (*sig == NULL)
+		return 0;
+
+	memset(*sig, 0, 64);
+
+	/* base64 signature are wrapped at 76 chars */
+	for (i = 0; begin+i < end; i+=77) {
+		/* black magic pointer arithmetic there */
+		n = begin+i+76 < end ? 76 : end - (begin + i);
+		memset(base64, 0, 76);
+		memcpy(base64, begin+i, n);
+
+		n = base64_decode(&tmp, base64, n);
+		memcpy((*sig) + len, tmp, n);
+		len += n;
+		free(tmp);
+	}
 
 	return len;
 }
