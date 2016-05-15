@@ -22,7 +22,7 @@ base64_index(const char *base64, char ch)
 		if (base64[idx] == ch)
 			return idx;
 
-	return -1;
+	return ch == '=' ? 0 : -1;
 }
 
 
@@ -62,7 +62,7 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 	uint64_t b64;
 	size_t size, i, j;
 
-	size = (len * 3) / 4;
+	size = (len / 4) * 3;
 	size -= msg[len - 1] == '=' ? 1 : 0;
 	size -= msg[len - 2] == '=' ? 1 : 0;
 
@@ -78,9 +78,12 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 		b64 |= i + 2 < len ? (base64_index(base64_table, msg[i+2])<<6) : 0;
 		b64 |= i + 3 < len ? (base64_index(base64_table, msg[i+3])) : 0;
 
-		(*buf)[j++] = 255 & (b64>>16);
-		(*buf)[j++] = 255 & (b64>>8);
-		(*buf)[j++] = 255 & (b64);
+		if (j < size)
+			(*buf)[j++] = 255 & (b64>>16);
+		if (j < size)
+			(*buf)[j++] = 255 & (b64>>8);
+		if (j < size)
+			(*buf)[j++] = 255 & (b64);
 	}
 
 	return size;
