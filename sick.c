@@ -234,8 +234,8 @@ check(FILE *fp, FILE *key)
 int
 main(int argc, char *argv[])
 {
+	int ret = 0, action = ACT_NONE;
 	FILE *key = NULL, *fp = NULL;
-	int action = ACT_NONE;
 
 	ARGBEGIN{
 	case 'f':
@@ -258,7 +258,7 @@ main(int argc, char *argv[])
 		fp = stdin;
 		switch (action) {
 		case ACT_SIGN:
-			sign(fp, key);
+			ret = sign(fp, key);
 			break;
 		}
 	}
@@ -268,5 +268,5 @@ main(int argc, char *argv[])
 	if (key)
 		fclose(key);
 
-	return 0;
+	return ret;
 }
