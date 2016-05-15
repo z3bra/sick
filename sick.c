@@ -19,6 +19,7 @@ enum {
 
 static void usage();
 static size_t bufferize(char **buf, FILE *fp);
+static size_t extractmsg(unsigned char *msg[], char *buf);
 static int createkeypair(const char *);
 static int sign(FILE *fp, FILE *key);
 
@@ -52,6 +53,24 @@ bufferize(char **buf, FILE *fp)
 		memcpy((*buf) + len, chunk, n);
 		len += n;
 	}
+
+	return len;
+}
+
+static size_t
+extractmsg(unsigned char **msg, char *buf)
+{
+	size_t len = 0;
+	char *sig;
+
+	sig = strstr(buf, SIGBEGIN);
+
+	if (sig == NULL)
+		return -1;
+
+	len = sig - buf;
+	*msg = malloc(len);
+	memcpy(*msg, buf, len);
 
 	return len;
 }
