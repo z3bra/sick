@@ -234,7 +234,7 @@ check(FILE *fp, FILE *key)
 int
 main(int argc, char *argv[])
 {
-	int ret = 0, action = ACT_NONE;
+	int ret = 0, action = ACT_CHCK;
 	FILE *key = NULL, *fp = NULL;
 
 	ARGBEGIN{
@@ -259,6 +259,9 @@ main(int argc, char *argv[])
 		switch (action) {
 		case ACT_SIGN:
 			ret = sign(fp, key);
+			break;
+		case ACT_CHCK:
+			ret = check(fp, key);
 			break;
 		}
 	}
