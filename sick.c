@@ -22,6 +22,7 @@ static size_t bufferize(unsigned char **buf, FILE *fp);
 static int createkeypair(const char *);
 static int sign(FILE *fp, FILE *key);
 
+static int verbose = 0;
 char *argv0;
 
 static void
@@ -154,6 +155,9 @@ main(int argc, char *argv[])
 		break;
 	case 's':
 		action = ACT_SIGN;
+		break;
+	case 'v':
+		verbose = 1;
 		break;
 	default:
 		usage();
