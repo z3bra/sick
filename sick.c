@@ -132,7 +132,7 @@ sign(FILE *fp, FILE *key)
 	free(msg);
 
 	/* .. followed by the signature delimiter .. */
-	fwrite(SIGBEGIN, 1, sizeof(SIGBEGIN), stdout);
+	fwrite(SIGBEGIN, 1, strlen(SIGBEGIN), stdout);
 
 	/* .. then the base64 encoded signature .. */
 	len = base64_encode(&base64, sig, 64);
@@ -140,7 +140,7 @@ sign(FILE *fp, FILE *key)
 	free(base64);
 
 	/* .. and the final signature delimiter! */
-	fwrite(SIGEND, 1, sizeof(SIGEND), stdout);
+	fwrite(SIGEND, 1, strlen(SIGEND), stdout);
 
 	return 0;
 }
