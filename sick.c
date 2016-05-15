@@ -23,6 +23,7 @@ static size_t extractmsg(unsigned char *msg[], char *buf);
 static size_t extractsig(unsigned char *sig[], char *buf);
 static int createkeypair(const char *);
 static int sign(FILE *fp, FILE *key);
+static int check(FILE *fp, FILE *key);
 
 static int verbose = 0;
 char *argv0;
@@ -201,6 +202,33 @@ sign(FILE *fp, FILE *key)
 	fwrite(SIGEND, 1, strlen(SIGEND), stdout);
 
 	return 0;
+}
+
+static int
+check(FILE *fp, FILE *key)
+{
+	int ret = 0;
+	size_t len;
+	char *buf = NULL;
+	unsigned char *sig, *msg, pub[32];
+
+	if (fread(pub, 1, 32, key) < 32)
+		return -1;
+
+	len = bufferize(&buf, fp);
+	if (len == 0)
+		return -1;
+
+	if (extractsig(&sig, buf)) {
+		len = extractmsg(&msg, buf);
+		ret = ed25519_verify(sig, msg, len, pub);
+		free(msg);
+	}
+
+	free(buf);
+	free(sig);
+
+	return !ret;
 }
 
 int
