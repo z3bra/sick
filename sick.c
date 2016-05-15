@@ -97,7 +97,7 @@ createkeypair(const char *alias)
 		perror(fn);
 		return -1;
 	}
-	if (fwrite(priv, 1, sizeof(pub), fp) < sizeof(pub)) {
+	if (fwrite(pub, 1, sizeof(pub), fp) < sizeof(pub)) {
 		fclose(fp);
 		perror(fn);
 		return -1;
