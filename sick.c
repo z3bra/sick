@@ -18,7 +18,7 @@ enum {
 };
 
 static void usage();
-static size_t bufferize(unsigned char **buf, FILE *fp);
+static size_t bufferize(char **buf, FILE *fp);
 static int createkeypair(const char *);
 static int sign(FILE *fp, FILE *key);
 
@@ -36,7 +36,7 @@ usage()
  * read chunks of data from a stream into a buffer, and return the size of the buffer
  */
 static size_t
-bufferize(unsigned char **buf, FILE *fp)
+bufferize(char **buf, FILE *fp)
 {
 	size_t n, len = 0;
 	char chunk[MAX_INPUT], *tmp;
@@ -48,7 +48,7 @@ bufferize(unsigned char **buf, FILE *fp)
 			return 0;
 		}
 
-		*buf = (unsigned char *)tmp;
+		*buf = tmp;
 		memcpy((*buf) + len, chunk, n);
 		len += n;
 	}
@@ -111,15 +111,19 @@ int
 sign(FILE *fp, FILE *key)
 {
 	size_t len;
-	char *base64;
+	char *base64, *buf = NULL;
 	unsigned char sig[64], priv[64], *msg = NULL;
 
 	if (!fread(priv, 1, 64, key))
 		return -1;
 
-	len = bufferize(&msg, fp);
+	len = bufferize(&buf, fp);
 	if (len == 0)
 		return -1;
+
+	msg = malloc(len);
+	memcpy(msg, buf, len);
+	free(buf);
 
 	ed25519_sign(sig, msg, len, priv);
 
@@ -133,6 +137,7 @@ sign(FILE *fp, FILE *key)
 	/* .. then the base64 encoded signature .. */
 	len = base64_encode(&base64, sig, 64);
 	base64_fold(stdout, base64, len, 0);
+	free(base64);
 
 	/* .. and the final signature delimiter! */
 	fwrite(SIGEND, 1, sizeof(SIGEND), stdout);
