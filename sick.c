@@ -242,8 +242,8 @@ main(int argc, char *argv[])
 		key = fopen(EARGF(usage()), "r");
 		break;
 	case 'g':
-		createkeypair(EARGF(usage()));
-		break;
+		return createkeypair(EARGF(usage()));
+		break; /* NOTREACHED */
 	case 's':
 		action = ACT_SIGN;
 		break;
