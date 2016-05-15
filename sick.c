@@ -17,6 +17,12 @@ enum {
 	ACT_CHCK
 };
 
+enum {
+	ERR_NOKEY,
+	ERR_NOSIG,
+	ERR_NOMSG
+};
+
 static void usage();
 static size_t bufferize(char **buf, FILE *fp);
 static size_t extractmsg(unsigned char *msg[], char *buf);
@@ -253,6 +259,10 @@ main(int argc, char *argv[])
 	default:
 		usage();
 	}ARGEND;
+
+	if (key == NULL) {
+		return ERR_NOKEY;
+	}
 
 	if (!argc) {
 		fp = stdin;
