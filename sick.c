@@ -43,7 +43,8 @@ usage()
 }
 
 /*
- * read chunks of data from a stream into a buffer, and return the size of the buffer
+ * read chunks of data from a stream into a buffer, and return the size of the 
+ * buffer
  */
 static size_t
 bufferize(char **buf, FILE *fp)
@@ -145,6 +146,8 @@ createkeypair(const char *alias)
 	memset(fn, 0, PATH_MAX);
 	memcpy(fn, alias, len);
 	memcpy(fn+len, ".key", 4);
+	if (verbose)
+		fprintf(stderr, "Creating private key %s\n", fn);
 	if ((fp = fopen(fn, "w")) == NULL) {
 		perror(fn);
 		return -1;
@@ -158,6 +161,8 @@ createkeypair(const char *alias)
 
 	/* write public key to "<alias>.pub" */
 	memcpy(fn+len, ".pub", 4);
+	if (verbose)
+		fprintf(stderr, "Creating public key %s\n", fn);
 	if ((fp = fopen(fn, "w")) == NULL) {
 		perror(fn);
 		return -1;
@@ -180,7 +185,7 @@ sign(FILE *fp, FILE *key)
 	unsigned char sig[64], priv[64], *msg = NULL;
 
 	if (!fread(priv, 1, 64, key))
-		return -1;
+		return ERR_NOKEY;
 
 	len = bufferize(&buf, fp);
 	if (len == 0)
@@ -189,6 +194,9 @@ sign(FILE *fp, FILE *key)
 	msg = malloc(len);
 	memcpy(msg, buf, len);
 	free(buf);
+
+	if (verbose)
+		fprintf(stderr, "Signing stream (%lu bytes)\n", len);
 
 	ed25519_sign(sig, msg, len, priv);
 
@@ -225,7 +233,13 @@ check(FILE *fp, FILE *key)
 	if ((len = bufferize(&buf, fp)) == 0)
 		return ERR_NOMSG;
 
+	if (verbose)
+		fprintf(stderr, "Extracting signature from input\n");
+
 	if (extractsig(&sig, buf) == 0) {
+		if (verbose)
+			fprintf(stderr, "ERROR: No signature found\n");
+
 		free(buf);
 		return ERR_NOSIG;
 	}
@@ -235,10 +249,16 @@ check(FILE *fp, FILE *key)
 		free(sig);
 	}
 
+	if (verbose)
+		fprintf(stderr, "Verifying stream (%lu bytes)\n", len);
+
 	ret = ed25519_verify(sig, msg, len, pub);
 
 	if (ret)
 		fwrite(msg, 1, len, stdout);
+
+	if (verbose)
+		fprintf(stderr, "Stream check %s\n", ret ? "OK" : "FAILED");
 
 	free(msg);
 	free(buf);
@@ -270,9 +290,8 @@ main(int argc, char *argv[])
 		usage();
 	}ARGEND;
 
-	if (key == NULL) {
+	if (key == NULL)
 		return ERR_NOKEY;
-	}
 
 	fp = argc ? fopen(*argv, "r") : stdin;
 
@@ -285,10 +304,8 @@ main(int argc, char *argv[])
 		break;
 	}
 
-	if (fp)
-		fclose(fp);
-	if (key)
-		fclose(key);
+	fclose(fp);
+	fclose(key);
 
 	return ret;
 }
