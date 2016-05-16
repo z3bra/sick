@@ -17,7 +17,7 @@ generates key pairs, signs, checks and remove signatures for a file or stream.
 The default action is to check the signature appended to the message given on
 stdin. A public key must be provided with the
 .Fl f
-flag.
+flag. If the signature can be verified with the public key, the message will be written to stdout without the signature.
 .It Fl g Ar ALIAS
 Generates an ed25519 key pairs: `ALIAS.key` and `ALIAS.pub`
 .It Fl f Ar KEY
