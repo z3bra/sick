@@ -229,13 +229,15 @@ check(FILE *fp, FILE *key)
 		return ERR_NOSIG;
 	}
 
-
 	if ((len = extractmsg(&msg, buf)) == 0) {
 		free(buf);
 		free(sig);
 	}
 
 	ret = ed25519_verify(sig, msg, len, pub);
+
+	if (ret)
+		fwrite(msg, 1, len, stdout);
 
 	free(msg);
 	free(buf);
