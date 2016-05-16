@@ -2,14 +2,14 @@
 
 ED25519_SRC = `{find ed25519/src -name '*.c'}
 
-SRC = sick.c base64.c ${ED25519_SRC}
+SRC = sick.c base64.c $ED25519_SRC
 OBJ = ${SRC:%.c=%.o}
 
 sick: $OBJ
-	${CC} $OBJ ${LDFLAGS} ${LIBS} -o sick
+	$LD -o $target $prereq $LDFLAGS $LIBS
 
 %.o: %.c
-	${CC} ${CFLAGS} -c $stem.c -o $stem.o
+	$CC $CFLAGS -c $stem.c -o $stem.o
 
 clean:V:
 	rm -f $OBJ sick
