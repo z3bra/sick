@@ -1,11 +1,38 @@
-# sick
+sick
+====
 
 Sign and check files using ed25519.
 sick(1) will let you generate private/public key pairs, sign files using your
 private key, and check a file signature using public keys stored in a keyring.
 
-## Generating keys
+Generating keys
+---------------
 
 To generate a key pair, run
 
 	$ sick -g alice
+
+This will create two files: `alice.key` (private) and `alice.pub` (public).
+The private key is used to sign files, while the public key can be distributed
+and used to check signatures.
+
+Signing streams
+---------------
+
+Once the private key is generated, you can use it to sign streams of data with
+the following command:
+
+	$ sick -f alice.key -s < README > SIGNED
+
+The whole stream will be dumped to stdout, and the signature will be appended.
+
+Checking streams
+----------------
+
+A signed stream can be verified against a public key with the following
+command:
+
+	$ sick -f alice.pub < SIGNED
+
+If the signature can be verified against the public key provided, the content
+of the message will be dumped to stdout.
