@@ -18,9 +18,9 @@ enum {
 };
 
 enum {
-	ERR_NOKEY,
-	ERR_NOSIG,
-	ERR_NOMSG
+	ERR_NOKEY = 1,
+	ERR_NOSIG = 2,
+	ERR_NOMSG = 3
 };
 
 static void usage();
