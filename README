@@ -29,6 +29,8 @@ The whole stream will be dumped to stdout, and the signature will be appended.
 Checking streams
 ----------------
 
+### Using a file
+
 A signed stream can be verified against a public key with the following
 command:
 
@@ -36,3 +38,13 @@ command:
 
 If the signature can be verified against the public key provided, the content
 of the message will be dumped to stdout.
+
+### Using a keyring
+
+In case the `-f` flag is omited, sick(1) will check the signature against all
+the files located in the $KEYRING directory.
+
+	$ export KEYRING="$HOME/.keyring"
+	$ mkdir $KEYRING
+	$ mv alice.pub $KEYRING/
+	$ sick < SIGNED

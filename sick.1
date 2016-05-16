@@ -15,9 +15,8 @@ generates key pairs, signs, checks and remove signatures for a file or stream.
 .Sh OPTIONS
 .Bl -tag -width "-g ALIAS"
 The default action is to check the signature appended to the message given on
-stdin. A public key must be provided with the
-.Fl f
-flag. If the signature can be verified with the public key, the message will be written to stdout without the signature.
+stdin. If the signature can be verified, the message will be written to stdout
+without the signature.
 .It Fl g Ar ALIAS
 Generates an ed25519 key pairs: `ALIAS.key` and `ALIAS.pub`
 .It Fl f Ar KEY
@@ -41,6 +40,11 @@ two lines, as follows:
 	base64 encoded signature
 	-----END ED25519 SIGNATURE-----
 .Ed
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width "KEYRING"
+.It Ev KEYRING
+Location of the keyring directory
 .El
 .Sh EXAMPLES
 .Bd -literal

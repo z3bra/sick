@@ -1,8 +1,10 @@
 /* See LICENSE file for copyright and license details. */
+#include <dirent.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "arg.h"
 #include "base64.h"
@@ -18,9 +20,10 @@ enum {
 };
 
 enum {
-	ERR_NOKEY = 1,
-	ERR_NOSIG = 2,
-	ERR_NOMSG = 3
+	ERR_NOKEY  = 1,
+	ERR_NOSIG  = 2,
+	ERR_NOMSG  = 3,
+	ERR_NORING = 4
 };
 
 static void usage();
@@ -28,6 +31,7 @@ static size_t bufferize(char **buf, FILE *fp);
 static size_t extractmsg(unsigned char *msg[], char *buf);
 static size_t extractsig(unsigned char *sig[], char *buf);
 static int createkeypair(const char *);
+static int check_keyring(unsigned char *sig, unsigned char *msg, size_t len);
 static int sign(FILE *fp, FILE *key);
 static int check(FILE *fp, FILE *key);
 
@@ -184,6 +188,9 @@ sign(FILE *fp, FILE *key)
 	char *base64, *buf = NULL;
 	unsigned char sig[64], priv[64], *msg = NULL;
 
+	if (key == NULL)
+		return ERR_NOKEY;
+
 	if (!fread(priv, 1, 64, key))
 		return ERR_NOKEY;
 
@@ -219,16 +226,66 @@ sign(FILE *fp, FILE *key)
 }
 
 static int
+check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
+{
+	int ret = 0;
+	size_t n = 0;
+	DIR *dirp = NULL;
+	FILE *key = NULL;
+	struct dirent *dt = NULL;
+	char *keyring = NULL, path[PATH_MAX];
+	unsigned char pub[32];
+
+	keyring = getenv("KEYRING");
+	if (keyring == NULL) {
+		if (verbose)
+			fprintf(stderr, "KEYRING not set\n");
+		return ERR_NORING;
+	}
+
+	dirp = opendir(keyring);
+	if (dirp == NULL) {
+		perror(keyring);
+		return ERR_NORING;
+	}
+
+        while ((dt = readdir(dirp)) != NULL) {
+                if (dt->d_type != DT_REG)
+			continue;
+
+                n = strnlen(keyring, PATH_MAX);
+                memset(path, 0, PATH_MAX);
+                memcpy(path, keyring, n);
+                path[n] = '/';
+                memcpy(path+n+1, dt->d_name, dt->d_reclen);
+		if ((key = fopen(path, "r")) == NULL) {
+			perror(path);
+			continue;
+		}
+		if (fread(pub, 1, 32, key) < 32) {
+			perror(path);
+			fclose(key);
+			continue;
+		}
+		ret += ed25519_verify(sig, msg, len, pub);
+		if (ret) {
+			if (verbose)
+				fprintf(stderr, "Key match: %s\n", path);
+			break;
+		}
+        }
+
+        closedir(dirp);
+	return !ret;
+}
+
+static int
 check(FILE *fp, FILE *key)
 {
 	int ret = 0;
 	size_t len;
 	char *buf = NULL;
 	unsigned char *sig, *msg, pub[32];
-
-	if (fread(pub, 1, 32, key) < 32) {
-		return ERR_NOKEY;
-	}
 
 	if ((len = bufferize(&buf, fp)) == 0)
 		return ERR_NOMSG;
@@ -252,19 +309,27 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Verifying stream (%lu bytes)\n", len);
 
-	ret = ed25519_verify(sig, msg, len, pub);
 
-	if (ret)
+	if (key) {
+		if (fread(pub, 1, 32, key) < 32)
+			return ERR_NOKEY;
+
+		ret = !ed25519_verify(sig, msg, len, pub);
+	} else {
+		ret = check_keyring(sig, msg, len);
+	}
+
+	if (ret == 0)
 		fwrite(msg, 1, len, stdout);
 
 	if (verbose)
-		fprintf(stderr, "Stream check %s\n", ret ? "OK" : "FAILED");
+		fprintf(stderr, "Stream check %s\n", ret ? "FAILED" : "OK");
 
 	free(msg);
 	free(buf);
 	free(sig);
 
-	return !ret;
+	return ret;
 }
 
 int
@@ -290,9 +355,6 @@ main(int argc, char *argv[])
 		usage();
 	}ARGEND;
 
-	if (key == NULL)
-		return ERR_NOKEY;
-
 	fp = argc ? fopen(*argv, "r") : stdin;
 
 	switch (action) {
@@ -305,7 +367,8 @@ main(int argc, char *argv[])
 	}
 
 	fclose(fp);
-	fclose(key);
+	if (key)
+		fclose(key);
 
 	return ret;
 }
