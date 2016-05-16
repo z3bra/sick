@@ -37,7 +37,8 @@ char *argv0;
 static void
 usage()
 {
-	fprintf(stderr, "usage: %s [-g ALIAS] [-f KEY] [-s [FILE..]]\n", argv0);
+	fprintf(stderr, "usage: %s [-sv] [-g ALIAS] [-f KEY] [FILE]\n",
+			argv0);
 	exit(EXIT_FAILURE);
 }
 
@@ -273,16 +274,15 @@ main(int argc, char *argv[])
 		return ERR_NOKEY;
 	}
 
-	if (!argc) {
-		fp = stdin;
-		switch (action) {
-		case ACT_SIGN:
-			ret = sign(fp, key);
-			break;
-		case ACT_CHCK:
-			ret = check(fp, key);
-			break;
-		}
+	fp = argc ? fopen(*argv, "r") : stdin;
+
+	switch (action) {
+	case ACT_SIGN:
+		ret |= sign(fp, key);
+		break;
+	case ACT_CHCK:
+		ret |= check(fp, key);
+		break;
 	}
 
 	if (fp)
