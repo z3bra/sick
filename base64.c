@@ -13,6 +13,9 @@ int base64_index(const char *, char);
 
 const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+/*
+ * Return the index of a base64 char in the table
+ */
 int
 base64_index(const char *base64, char ch)
 {
@@ -25,7 +28,10 @@ base64_index(const char *base64, char ch)
 	return ch == '=' ? 0 : -1;
 }
 
-
+/*
+ * Encode the given message in base64, allocate memory to store the encoded
+ * message, and return the size allocated.
+ */
 size_t
 base64_encode(char **buf, const unsigned char *msg, size_t len)
 {
@@ -56,6 +62,10 @@ base64_encode(char **buf, const unsigned char *msg, size_t len)
 	return size;
 }
 
+/*
+ * Allocate size to decode a base64 message, decode it in the buffer and
+ * return the allocated size.
+ */
 size_t
 base64_decode(char **buf, const unsigned char *msg, size_t len)
 {
@@ -89,6 +99,10 @@ base64_decode(char **buf, const unsigned char *msg, size_t len)
 	return size;
 }
 
+/*
+ * Write a base64 encoded message to the given file pointer, folded at the
+ * given width (defaults to BASE64_FOLD if specified width is 0).
+ */
 size_t
 base64_fold(FILE *fp, char *base64, size_t len, size_t fold)
 {
@@ -97,7 +111,7 @@ base64_fold(FILE *fp, char *base64, size_t len, size_t fold)
 	fold = fold > 0 ? fold : BASE64_FOLD;
 
 	for (i = 0; i < len; i += BASE64_FOLD) {
-		fwrite(base64+i, 1, i+BASE64_FOLD > len ? len - i : BASE64_FOLD, fp);
+		fwrite(base64+i, 1, i+BASE64_FOLD>len?len-i:BASE64_FOLD, fp);
 		fwrite("\n", 1, 1, fp);
 	}
 

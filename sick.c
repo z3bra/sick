@@ -56,6 +56,10 @@ bufferize(char **buf, FILE *fp)
 	size_t n, len = 0;
 	char chunk[MAX_INPUT], *tmp;
 
+	/*
+	 * For each chunk read, reallocate the buffer size to fit the newly
+	 * read data, and copy it over
+	 */
 	while ((n = fread(chunk, 1, MAX_INPUT, fp)) > 0) {
 		if ((tmp = realloc(*buf, len + n)) == NULL) {
 			free(*buf);
@@ -71,16 +75,22 @@ bufferize(char **buf, FILE *fp)
 	return len;
 }
 
+/*
+ * Copy the full content of the buffer, minus the signature to the given
+ * pointer
+ */
 static size_t
 extractmsg(unsigned char **msg, char *buf)
 {
 	size_t len = 0;
 	char *sig;
 
+	/* signature start is identified by SIGBEGIN */
 	sig = strstr(buf, SIGBEGIN);
 
+	/* if signature is not found, return an error */
 	if (sig == NULL)
-		return -1;
+		return 0;
 
 	len = sig - buf;
 	*msg = malloc(len);
@@ -89,6 +99,9 @@ extractmsg(unsigned char **msg, char *buf)
 	return len;
 }
 
+/*
+ * Copy the signature at the end of the buffer to the given pointer
+ */
 static size_t
 extractsig(unsigned char **sig, char *buf)
 {
@@ -97,22 +110,35 @@ extractsig(unsigned char **sig, char *buf)
 	char *begin, *end, *tmp;
 	unsigned char base64[76];
 
+	/* search start and end strings for the signatures */
 	begin = strstr(buf, SIGBEGIN) + strlen(SIGBEGIN);
 	end   = strstr(buf, SIGEND);
 
-	if (!(begin && end)) {
+	/* in case the signature block isn't well formated, return 0 */
+	if (!(begin && end))
 		return 0;
-	}
 
+	/* ed25519 signatures are 64 bytes longs */
 	*sig = malloc(64);
 	if (*sig == NULL)
 		return 0;
 
 	memset(*sig, 0, 64);
 
-	/* base64 signature are wrapped at 76 chars */
+	/*
+	 * base64 signature are wrapped at 76 chars.
+	 * 76 being a multiple of 4, it means we can decode the signature in
+	 * chunks of 76 bytes, and concatenate them together to get the
+	 * original data.
+	 */
 	for (i = 0; begin+i < end; i+=77) {
-		/* black magic pointer arithmetic there */
+		/*
+		 * black magic pointer arithmetic there..
+		 * if we reached the "end" pointer, it means we're at the end
+		 * of the signature.
+		 * The line length is either 76 bytes long, or less (for the
+		 * last line)
+		 */
 		n = begin+i+76 < end ? 76 : end - (begin + i);
 		memset(base64, 0, 76);
 		memcpy(base64, begin+i, n);
@@ -181,6 +207,10 @@ createkeypair(const char *alias)
 	return 0;
 }
 
+/*
+ * Buffer a data stream, sign it, and write the buffer + base64 encoded
+ * signature to stdout
+ */
 int
 sign(FILE *fp, FILE *key)
 {
@@ -225,6 +255,10 @@ sign(FILE *fp, FILE *key)
 	return 0;
 }
 
+/*
+ * Check a buffer against all files in the $KEYRING directory set in the
+ * environment.
+ */
 static int
 check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 {
@@ -236,6 +270,7 @@ check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 	char *keyring = NULL, path[PATH_MAX];
 	unsigned char pub[32];
 
+	/* get the keyring from the environment */
 	keyring = getenv("KEYRING");
 	if (keyring == NULL) {
 		if (verbose)
@@ -249,10 +284,17 @@ check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 		return ERR_NORING;
 	}
 
+	/* loop through all entries in the $KEYRING directory */
         while ((dt = readdir(dirp)) != NULL) {
+		/* ignore entries that are not regular files */
                 if (dt->d_type != DT_REG)
 			continue;
 
+		/* ignore all entries that are not 32 bytes long */
+		if (dt->d_reclen != 32)
+			continue
+
+		/* set public key file path and store its content */
                 n = strnlen(keyring, PATH_MAX);
                 memset(path, 0, PATH_MAX);
                 memcpy(path, keyring, n);
@@ -267,6 +309,8 @@ check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 			fclose(key);
 			continue;
 		}
+
+		/* check message for the given public key */
 		ret += ed25519_verify(sig, msg, len, pub);
 		if (ret) {
 			if (verbose)
@@ -279,6 +323,11 @@ check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 	return !ret;
 }
 
+/*
+ * Check the given stream against the key provided. If the stream pointer
+ * supposed to hold the key is NULL, check the stream against all public keys
+ * located in the $KEYRING directory.
+ */
 static int
 check(FILE *fp, FILE *key)
 {
@@ -309,7 +358,6 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Verifying stream (%lu bytes)\n", len);
 
-
 	if (key) {
 		if (fread(pub, 1, 32, key) < 32)
 			return ERR_NOKEY;
@@ -319,6 +367,10 @@ check(FILE *fp, FILE *key)
 		ret = check_keyring(sig, msg, len);
 	}
 
+	/*
+	 * if we're able to verify the signature, dump buffer's content to
+	 * stdout
+	 */
 	if (ret == 0)
 		fwrite(msg, 1, len, stdout);
 
@@ -355,6 +407,7 @@ main(int argc, char *argv[])
 		usage();
 	}ARGEND;
 
+	/* if no argument is provided, read stdin */
 	fp = argc ? fopen(*argv, "r") : stdin;
 
 	switch (action) {
