@@ -95,7 +95,6 @@ extractsig(unsigned char **sig, char *buf)
 	end   = strstr(buf, SIGEND);
 
 	if (!(begin && end)) {
-		puts("Signature not found");
 		return 0;
 	}
 
@@ -184,7 +183,7 @@ sign(FILE *fp, FILE *key)
 
 	len = bufferize(&buf, fp);
 	if (len == 0)
-		return -1;
+		return ERR_NOMSG;
 
 	msg = malloc(len);
 	memcpy(msg, buf, len);
@@ -218,19 +217,27 @@ check(FILE *fp, FILE *key)
 	char *buf = NULL;
 	unsigned char *sig, *msg, pub[32];
 
-	if (fread(pub, 1, 32, key) < 32)
-		return -1;
-
-	len = bufferize(&buf, fp);
-	if (len == 0)
-		return -1;
-
-	if (extractsig(&sig, buf)) {
-		len = extractmsg(&msg, buf);
-		ret = ed25519_verify(sig, msg, len, pub);
-		free(msg);
+	if (fread(pub, 1, 32, key) < 32) {
+		return ERR_NOKEY;
 	}
 
+	if ((len = bufferize(&buf, fp)) == 0)
+		return ERR_NOMSG;
+
+	if (extractsig(&sig, buf) == 0) {
+		free(buf);
+		return ERR_NOSIG;
+	}
+
+
+	if ((len = extractmsg(&msg, buf)) == 0) {
+		free(buf);
+		free(sig);
+	}
+
+	ret = ed25519_verify(sig, msg, len, pub);
+
+	free(msg);
 	free(buf);
 	free(sig);
 
