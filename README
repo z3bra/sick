@@ -48,3 +48,11 @@ the files located in the $KEYRING directory.
 	$ mkdir $KEYRING
 	$ mv alice.pub $KEYRING/
 	$ sick < SIGNED
+
+Trim a signature
+----------------
+
+You can discard a signature on a stream by using the `-t` (trim) flag. It will
+dump the input stream to stdout without the signature:
+
+	$ sick -t SIGNED > UNSIGNED

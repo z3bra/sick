@@ -6,9 +6,9 @@
 .Nd sign/check files using ed25519 signatures
 .Sh SYNOPSIS
 .Nm sick
+.Op Fl stv
 .Op Fl g Ar ALIAS
 .Op Fl f Ar KEY
-.Op Fl sv
 .Sh DESCRIPTION
 .Nm
 generates key pairs, signs, checks and remove signatures for a file or stream.
@@ -17,10 +17,6 @@ generates key pairs, signs, checks and remove signatures for a file or stream.
 The default action is to check the signature appended to the message given on
 stdin. If the signature can be verified, the message will be written to stdout
 without the signature.
-.It Fl g Ar ALIAS
-Generates an ed25519 key pairs: `ALIAS.key` and `ALIAS.pub`
-.It Fl f Ar KEY
-Specifies the key file to be used for the current operation (sign or check).
 .It Fl s
 Make
 .Nm
@@ -28,6 +24,19 @@ perform a signing operation on the current stream. This will append the base64
 encoded signature to the stream and dump them both to stdout. See
 .Sx SIGNATURE FORMAT
 for information on what will be appended to the stream.
+.It Fl t
+Make
+.Nm
+trim the signature at the end of the stream if there is one, and write the
+message to stdout. If there is no signature, the whole stream gets written.
+.It Fl v
+Enable verbose mode.
+.Nm
+will log informative messages to stderr.
+.It Fl g Ar ALIAS
+Generates an ed25519 key pairs: `ALIAS.key` and `ALIAS.pub`
+.It Fl f Ar KEY
+Specifies the key file to be used for the current operation (sign or check).
 .Sh SIGNATURE FORMAT
 ed25519 signatures are 64 bytes long. For easier reading in text/plain format,
 .Nm
@@ -57,10 +66,10 @@ Signing a stream:
 	$ sick -f ${USER}.key < FILE > SIGNED
 .Ed
 
-Checking a signed stream (FILE will be empty if the signature doesn't match the
+Checking a signed file (FILE will be empty if the signature doesn't match the
 public key):
 .Bd -literal
-	$ sick -f ${USER}.pub < SIGNED > FILE
+	$ sick -f ${USER}.pub SIGNED > FILE
 .Ed
 .Sh SEE ALSO
 .Xr ed25519 7 ,

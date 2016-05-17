@@ -16,7 +16,8 @@
 enum {
 	ACT_NONE,
 	ACT_SIGN,
-	ACT_CHCK
+	ACT_CHCK,
+	ACT_TRIM
 };
 
 enum {
@@ -28,26 +29,27 @@ enum {
 
 static void usage();
 static size_t bufferize(char **buf, FILE *fp);
-static size_t extractmsg(unsigned char *msg[], char *buf);
+static size_t extractmsg(unsigned char *msg[], char *buf, size_t len);
 static size_t extractsig(unsigned char *sig[], char *buf);
 static int createkeypair(const char *);
 static int check_keyring(unsigned char *sig, unsigned char *msg, size_t len);
 static int sign(FILE *fp, FILE *key);
 static int check(FILE *fp, FILE *key);
+static int trimsig(FILE *fp);
 
-static int verbose = 0;
 char *argv0;
+static int verbose = 0;
 
 static void
 usage()
 {
-	fprintf(stderr, "usage: %s [-sv] [-g ALIAS] [-f KEY] [FILE]\n",
+	fprintf(stderr, "usage: %s [-stv] [-g ALIAS] [-f KEY] [FILE]\n",
 			argv0);
 	exit(EXIT_FAILURE);
 }
 
 /*
- * read chunks of data from a stream into a buffer, and return the size of the 
+ * read chunks of data from a stream into a buffer, and return the size of the
  * buffer
  */
 static size_t
@@ -80,7 +82,7 @@ bufferize(char **buf, FILE *fp)
  * pointer
  */
 static size_t
-extractmsg(unsigned char **msg, char *buf)
+extractmsg(unsigned char **msg, char *buf, size_t buflen)
 {
 	size_t len = 0;
 	char *sig;
@@ -88,11 +90,13 @@ extractmsg(unsigned char **msg, char *buf)
 	/* signature start is identified by SIGBEGIN */
 	sig = strstr(buf, SIGBEGIN);
 
-	/* if signature is not found, return an error */
-	if (sig == NULL)
-		return 0;
+	/* if signature is not found, return the whole buffer */
+	if (sig == NULL) {
+		len = buflen;
+	} else {
+		len = sig - buf;
+	}
 
-	len = sig - buf;
 	*msg = malloc(len);
 	memcpy(*msg, buf, len);
 
@@ -292,7 +296,7 @@ check_keyring(unsigned char *sig, unsigned char *msg, size_t len)
 
 		/* ignore all entries that are not 32 bytes long */
 		if (dt->d_reclen != 32)
-			continue
+			continue;
 
 		/* set public key file path and store its content */
                 n = strnlen(keyring, PATH_MAX);
@@ -350,7 +354,7 @@ check(FILE *fp, FILE *key)
 		return ERR_NOSIG;
 	}
 
-	if ((len = extractmsg(&msg, buf)) == 0) {
+	if ((len = extractmsg(&msg, buf, len)) == 0) {
 		free(buf);
 		free(sig);
 	}
@@ -384,6 +388,34 @@ check(FILE *fp, FILE *key)
 	return ret;
 }
 
+/*
+ * Remove a signature from a stream, and dump it to stdout
+ */
+static int
+trimsig(FILE *fp)
+{
+	size_t len = 0;
+	char *buf = NULL;
+	unsigned char *msg = NULL;
+
+	len = bufferize(&buf, fp);
+	if (!buf)
+		return -1;
+
+	len = extractmsg(&msg, buf, len);
+	if (!msg) {
+		free(buf);
+		return ERR_NOMSG;
+	}
+
+	fwrite(msg, 1, len, stdout);
+
+	free(buf);
+	free(msg);
+
+	return 0;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -399,6 +431,9 @@ main(int argc, char *argv[])
 		break; /* NOTREACHED */
 	case 's':
 		action = ACT_SIGN;
+		break;
+	case 't':
+		action = ACT_TRIM;
 		break;
 	case 'v':
 		verbose = 1;
@@ -416,6 +451,9 @@ main(int argc, char *argv[])
 		break;
 	case ACT_CHCK:
 		ret |= check(fp, key);
+		break;
+	case ACT_TRIM:
+		ret |= trimsig(fp);
 		break;
 	}
 
