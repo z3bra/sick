@@ -139,11 +139,8 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 
 	/* search start and end strings for the signatures */
 	begin = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN)) + strlen(SIGBEGIN);
-	if (!begin)
-		return 0;
-
-	end   = memstr(begin, len, SIGEND, strlen(SIGEND));
-	if (!end)
+	end   = memstr(buf, len, SIGEND, strlen(SIGEND));
+	if (!(begin && end))
 		return 0;
 
 	/* ed25519 signatures are 64 bytes longs */
@@ -177,7 +174,7 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 		free(tmp);
 	}
 
-	return len;
+	return siglen;
 }
 
 /*
@@ -370,9 +367,9 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Extracting signature from input\n");
 
-	if (extractsig(&sig, buf, len) == 0) {
+	if (extractsig(&sig, buf, len) != 64) {
 		if (verbose)
-			fprintf(stderr, "ERROR: No signature found\n");
+			fprintf(stderr, "ERROR: No valid signature found\n");
 
 		free(buf);
 		return ERR_NOSIG;
