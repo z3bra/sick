@@ -28,9 +28,10 @@ enum {
 };
 
 static void usage();
+static char *memstr(const void *h0, size_t k, const char *n0, size_t l);
 static size_t bufferize(char **buf, FILE *fp);
 static size_t extractmsg(unsigned char *msg[], char *buf, size_t len);
-static size_t extractsig(unsigned char *sig[], char *buf);
+static size_t extractsig(unsigned char *sig[], char *buf, size_t len);
 static int createkeypair(const char *);
 static int check_keyring(unsigned char *sig, unsigned char *msg, size_t len);
 static int sign(FILE *fp, FILE *key);
@@ -46,6 +47,28 @@ usage()
 	fprintf(stderr, "usage: %s [-stv] [-g ALIAS] [-f KEY] [FILE]\n",
 			argv0);
 	exit(EXIT_FAILURE);
+}
+
+/*
+ * Find a string within a memory chunk, stupid style!
+ */
+char *
+memstr(const void *h0, size_t k, const char *n0, size_t l)
+{
+	size_t i;
+        const char *h = h0;
+
+        /* Return immediately on empty needle */
+        if (!l) return (char *)h;
+
+        /* Return immediately when needle is longer than haystack */
+        if (k<l) return 0;
+
+	for (i=0; i<(k-l); i++) {
+		if (memcmp(h+i, n0, l) == 0)
+			return (char *)(h+i);
+	}
+	return NULL;
 }
 
 /*
@@ -88,7 +111,7 @@ extractmsg(unsigned char **msg, char *buf, size_t buflen)
 	char *sig;
 
 	/* signature start is identified by SIGBEGIN */
-	sig = strstr(buf, SIGBEGIN);
+	sig = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN));
 
 	/* if signature is not found, return the whole buffer */
 	if (sig == NULL) {
@@ -107,19 +130,20 @@ extractmsg(unsigned char **msg, char *buf, size_t buflen)
  * Copy the signature at the end of the buffer to the given pointer
  */
 static size_t
-extractsig(unsigned char **sig, char *buf)
+extractsig(unsigned char **sig, char *buf, size_t len)
 {
 	off_t i;
-	size_t n, len = 0;
+	size_t n, siglen = 0;
 	char *begin, *end, *tmp;
 	unsigned char base64[76];
 
 	/* search start and end strings for the signatures */
-	begin = strstr(buf, SIGBEGIN) + strlen(SIGBEGIN);
-	end   = strstr(buf, SIGEND);
+	begin = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN)) + strlen(SIGBEGIN);
+	if (!begin)
+		return 0;
 
-	/* in case the signature block isn't well formated, return 0 */
-	if (!(begin && end))
+	end   = memstr(begin, len, SIGEND, strlen(SIGEND));
+	if (!end)
 		return 0;
 
 	/* ed25519 signatures are 64 bytes longs */
@@ -148,8 +172,8 @@ extractsig(unsigned char **sig, char *buf)
 		memcpy(base64, begin+i, n);
 
 		n = base64_decode(&tmp, base64, n);
-		memcpy((*sig) + len, tmp, n);
-		len += n;
+		memcpy((*sig) + siglen, tmp, n);
+		siglen += n;
 		free(tmp);
 	}
 
@@ -346,7 +370,7 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Extracting signature from input\n");
 
-	if (extractsig(&sig, buf) == 0) {
+	if (extractsig(&sig, buf, len) == 0) {
 		if (verbose)
 			fprintf(stderr, "ERROR: No signature found\n");
 
