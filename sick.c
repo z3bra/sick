@@ -64,7 +64,7 @@ memstr(const void *h0, size_t k, const char *n0, size_t l)
         /* Return immediately when needle is longer than haystack */
         if (k<l) return 0;
 
-	for (i=0; i<(k-l); i++) {
+	for (i=0; i<=(k-l); i++) {
 		if (memcmp(h+i, n0, l) == 0)
 			return (char *)(h+i);
 	}
