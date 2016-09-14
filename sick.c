@@ -142,7 +142,7 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 	/* search start and end strings for the signatures */
 	begin = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN)) + strlen(SIGBEGIN);
 	end   = memstr(buf, len, SIGEND, strlen(SIGEND));
-	if (!(begin && end))
+	if (!(begin && end) || end != (buf + len - strlen(SIGEND)))
 		return 0;
 
 	/* ed25519 signatures are 64 bytes longs */
