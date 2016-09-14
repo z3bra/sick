@@ -51,12 +51,14 @@ usage()
 
 /*
  * Find a string within a memory chunk, stupid style!
+ * Search is done backward, as the signature will be appended at the
+ * end of the stream.
  */
 char *
 memstr(const void *h0, size_t k, const char *n0, size_t l)
 {
-	size_t i;
-        const char *h = h0;
+	ssize_t i;
+	const unsigned char *h = h0;
 
         /* Return immediately on empty needle */
         if (!l) return (char *)h;
@@ -64,7 +66,7 @@ memstr(const void *h0, size_t k, const char *n0, size_t l)
         /* Return immediately when needle is longer than haystack */
         if (k<l) return 0;
 
-	for (i=0; i<=(k-l); i++) {
+	for (i=k-l; i>0; i--) {
 		if (memcmp(h+i, n0, l) == 0)
 			return (char *)(h+i);
 	}
