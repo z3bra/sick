@@ -111,7 +111,7 @@ extractmsg(unsigned char **msg, char *buf, size_t buflen)
 	char *sig;
 
 	/* signature start is identified by SIGBEGIN */
-	sig = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN));
+	sig = memstr(buf, buflen, SIGBEGIN, strlen(SIGBEGIN));
 
 	/* if signature is not found, return the whole buffer */
 	if (sig == NULL) {
@@ -367,7 +367,7 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Extracting signature from input\n");
 
-	if (extractsig(&sig, buf, len) != 64) {
+	if (extractsig(&sig, buf, len) != 65) {
 		if (verbose)
 			fprintf(stderr, "ERROR: No valid signature found\n");
 
