@@ -6,7 +6,7 @@
 .Nd sign/check files using ed25519 signatures
 .Sh SYNOPSIS
 .Nm sick
-.Op Fl stv
+.Op Fl astv
 .Op Fl g Ar ALIAS
 .Op Fl f Ar KEY
 .Sh DESCRIPTION
@@ -17,6 +17,11 @@ generates key pairs, signs, checks and remove signatures for a file or stream.
 The default action is to check the signature appended to the message given on
 stdin. If the signature can be verified, the message will be written to stdout
 without the signature.
+.It Fl a
+Deal with armored signature. The signature are base64 encoded, wrapped
+at 76 characters and surrounded with two context lines. See
+.Sx SIGNATURE FORMAT
+For more information on the signature format.
 .It Fl s
 Make
 .Nm
@@ -40,10 +45,11 @@ Specifies the key file to be used for the current operation (sign or check).
 .Sh SIGNATURE FORMAT
 ed25519 signatures are 64 bytes long. For easier reading in text/plain format,
 .Nm
-will base64 encode them prior to appending them to stdout. The base64 signature
-is wrapped at 76 bytes as specified by POSIX uuencode.
-In order to make it easier to detect the signature, it will be wrapped between
-two lines, as follows:
+can base64 encode them (see
+.Fl a
+flag) prior to appending them to stdout. The base64 signature is wrapped
+at 76 bytes as specified by POSIX uuencode. In order to make it easier
+to detect the signature, it will be wrapped between two lines, as follows:
 .Bd -literal
 	-----BEGIN ED25519 SIGNATURE-----
 	base64 encoded signature

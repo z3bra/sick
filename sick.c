@@ -40,11 +40,12 @@ static int trimsig(FILE *fp);
 
 char *argv0;
 static int verbose = 0;
+static int armored = 0;
 
 static void
 usage()
 {
-	fprintf(stderr, "usage: %s [-stv] [-g ALIAS] [-f KEY] [FILE]\n",
+	fprintf(stderr, "usage: %s [-astv] [-g ALIAS] [-f KEY] [FILE]\n",
 			argv0);
 	exit(EXIT_FAILURE);
 }
@@ -112,8 +113,13 @@ extractmsg(unsigned char **msg, char *buf, size_t buflen)
 	size_t len = 0;
 	char *sig;
 
-	/* signature start is identified by SIGBEGIN */
-	sig = memstr(buf, buflen, SIGBEGIN, strlen(SIGBEGIN));
+	if (armored) {
+		/* signature start is identified by SIGBEGIN */
+		sig = memstr(buf, buflen, SIGBEGIN, strlen(SIGBEGIN));
+	} else {
+		/* signatures are 64 bytes long, appended to the stream */
+		sig = buf + buflen - 64;
+	}
 
 	/* if signature is not found, return the whole buffer */
 	if (sig == NULL) {
@@ -139,11 +145,13 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 	char *begin, *end, *tmp;
 	unsigned char base64[76];
 
-	/* search start and end strings for the signatures */
-	begin = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN)) + strlen(SIGBEGIN);
-	end   = memstr(buf, len, SIGEND, strlen(SIGEND));
-	if (!(begin && end) || end != (buf + len - strlen(SIGEND)))
-		return 0;
+	if (armored) {
+		/* search start and end strings for the signatures */
+		begin = memstr(buf, len, SIGBEGIN, strlen(SIGBEGIN)) + strlen(SIGBEGIN);
+		end   = memstr(buf, len, SIGEND, strlen(SIGEND));
+		if (!(begin && end) || end != (buf + len - strlen(SIGEND)))
+			return 0;
+	}
 
 	/* ed25519 signatures are 64 bytes longs */
 	*sig = malloc(64);
@@ -152,28 +160,34 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 
 	memset(*sig, 0, 64);
 
-	/*
-	 * base64 signature are wrapped at 76 chars.
-	 * 76 being a multiple of 4, it means we can decode the signature in
-	 * chunks of 76 bytes, and concatenate them together to get the
-	 * original data.
-	 */
-	for (i = 0; begin+i < end; i+=77) {
+	if (armored) {
 		/*
-		 * black magic pointer arithmetic there..
-		 * if we reached the "end" pointer, it means we're at the end
-		 * of the signature.
-		 * The line length is either 76 bytes long, or less (for the
-		 * last line)
+		 * base64 signature are wrapped at 76 chars.
+		 * 76 being a multiple of 4, it means we can decode the signature in
+		 * chunks of 76 bytes, and concatenate them together to get the
+		 * original data.
 		 */
-		n = begin+i+76 < end ? 76 : end - (begin + i);
-		memset(base64, 0, 76);
-		memcpy(base64, begin+i, n);
+		for (i = 0; begin+i < end; i+=77) {
+			/*
+			 * black magic pointer arithmetic there..
+			 * if we reached the "end" pointer, it means we're at the end
+			 * of the signature.
+			 * The line length is either 76 bytes long, or less (for the
+			 * last line)
+			 */
+			n = begin+i+76 < end ? 76 : end - (begin + i);
+			memset(base64, 0, 76);
+			memcpy(base64, begin+i, n);
 
-		n = base64_decode(&tmp, base64, n);
-		memcpy((*sig) + siglen, tmp, n);
-		siglen += n;
-		free(tmp);
+			n = base64_decode(&tmp, base64, n);
+			memcpy((*sig) + siglen, tmp, n);
+			siglen += n;
+			free(tmp);
+		}
+	} else {
+		/* assume the signature is the last 64 bytes of the stream */
+		if (memcpy((*sig), buf + len - 64, 64))
+			siglen = 64;
 	}
 
 	return siglen;
@@ -268,16 +282,21 @@ sign(FILE *fp, FILE *key)
 	fwrite(msg, 1, len, stdout);
 	free(msg);
 
-	/* .. followed by the signature delimiter .. */
-	fwrite(SIGBEGIN, 1, strlen(SIGBEGIN), stdout);
+	if (armored) {
+		/* .. followed by the signature delimiter .. */
+		fwrite(SIGBEGIN, 1, strlen(SIGBEGIN), stdout);
 
-	/* .. then the base64 encoded signature .. */
-	len = base64_encode(&base64, sig, 64);
-	base64_fold(stdout, base64, len, 0);
-	free(base64);
+		/* .. then the base64 encoded signature .. */
+		len = base64_encode(&base64, sig, 64);
+		base64_fold(stdout, base64, len, 0);
+		free(base64);
 
-	/* .. and the final signature delimiter! */
-	fwrite(SIGEND, 1, strlen(SIGEND), stdout);
+		/* .. and the final signature delimiter! */
+		fwrite(SIGEND, 1, strlen(SIGEND), stdout);
+	} else {
+		/* simply write the signature as-is */
+		fwrite(sig, 1, 64, stdout);
+	}
 
 	return 0;
 }
@@ -369,7 +388,7 @@ check(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Extracting signature from input\n");
 
-	if (extractsig(&sig, buf, len) != 65) {
+	if (extractsig(&sig, buf, len) < 64) {
 		if (verbose)
 			fprintf(stderr, "ERROR: No valid signature found\n");
 
@@ -446,6 +465,9 @@ main(int argc, char *argv[])
 	FILE *key = NULL, *fp = NULL;
 
 	ARGBEGIN{
+	case 'a':
+		armored = 1;
+		break;
 	case 'f':
 		key = fopen(EARGF(usage()), "r");
 		break;
