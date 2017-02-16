@@ -82,13 +82,13 @@ static size_t
 bufferize(char **buf, FILE *fp)
 {
 	size_t n, len = 0;
-	char chunk[MAX_INPUT], *tmp;
+	char chunk[_POSIX_MAX_INPUT], *tmp;
 
 	/*
 	 * For each chunk read, reallocate the buffer size to fit the newly
 	 * read data, and copy it over
 	 */
-	while ((n = fread(chunk, 1, MAX_INPUT, fp)) > 0) {
+	while ((n = fread(chunk, 1, _POSIX_MAX_INPUT, fp)) > 0) {
 		if ((tmp = realloc(*buf, len + n)) == NULL) {
 			free(*buf);
 			*buf = NULL;
