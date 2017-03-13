@@ -88,7 +88,7 @@ bufferize(char **buf, FILE *fp)
 	 * For each chunk read, reallocate the buffer size to fit the newly
 	 * read data, and copy it over
 	 */
-	while ((n = fread(chunk, 1, _POSIX_MAX_INPUT, fp)) > 0) {
+	while (!feof(fp) && (n = fread(chunk, 1, _POSIX_MAX_INPUT, fp)) > 0) {
 		if ((tmp = realloc(*buf, len + n)) == NULL) {
 			free(*buf);
 			*buf = NULL;
