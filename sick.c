@@ -186,7 +186,7 @@ extractsig(unsigned char **sig, char *buf, size_t len)
 		}
 	} else {
 		/* assume the signature is the last 64 bytes of the stream */
-		if (memcpy((*sig), buf + len - 64, 64))
+		if (len > 64 && memcpy((*sig), buf + len - 64, 64))
 			siglen = 64;
 	}
 
