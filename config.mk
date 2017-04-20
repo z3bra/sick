@@ -1,4 +1,4 @@
-VERSION = 0.0
+VERSION = 1.1
 
 CC = cc
 LD = ${CC}
