@@ -16,7 +16,11 @@ generates key pairs, signs, checks and remove signatures for a file or stream.
 .Bl -tag -width "-g ALIAS"
 The default action is to check the signature appended to the message given on
 stdin. If the signature can be verified, the message will be written to stdout
-without the signature.
+without the signature. If the
+.Fl f
+flag is not specified on the command line, all files in the
+.Ev KEYRING
+directory will be tried to verify the message.
 .It Fl a
 Deal with armored signature. The signature are base64 encoded, wrapped
 at 76 characters and surrounded with two context lines. See
