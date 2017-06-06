@@ -1,58 +1,36 @@
 sick
 ====
 
-Sign and check files using ed25519.
-sick(1) will let you generate private/public key pairs, sign files using your
-private key, and check a file signature using public keys stored in a keyring.
+Sign and check streams cryptographically using the ed25519 algorithm.
+The sick(1) utility signs and verifies streams of data using ed25519
+signatures, either in binary or armored text format.
+You can also generate a public/private key pair
 
-Generating keys
----------------
+Requirements
+------------
+* GNU/Make: https://www.gnu.org/software/make
+* ed26619 library: https://github.com/rdeker/ed25519
 
-To generate a key pair, run
+Installation
+------------
+To compile sick(1), you will need to get the 
 
-	$ sick -g alice
+	$ make
+	# make install
 
-This will create two files: `alice.key` (private) and `alice.pub` (public).
-The private key is used to sign files, while the public key can be distributed
-and used to check signatures.
+Usage
+-----
+See the sick(1) manpage for details. As a quick reference:
 
-Signing streams
----------------
+	# generate key pair
+	sick -g alice
 
-Once the private key is generated, you can use it to sign streams of data with
-the following command:
+	# sign and check a file
+	sick -sf alice.key README | sick -f alice.pub
 
-	$ sick -f alice.key -s < README > SIGNED
+	# get the signature of a file
+	sick -saf alice.key README | tail -c 156
 
-The whole stream will be dumped to stdout, and the signature will be appended.
-
-Checking streams
-----------------
-
-### Using a file
-
-A signed stream can be verified against a public key with the following
-command:
-
-	$ sick -f alice.pub < SIGNED
-
-If the signature can be verified against the public key provided, the content
-of the message will be dumped to stdout.
-
-### Using a keyring
-
-In case the `-f` flag is omited, sick(1) will check the signature against all
-the files located in the $KEYRING directory.
-
-	$ export KEYRING="$HOME/.keyring"
-	$ mkdir $KEYRING
-	$ mv alice.pub $KEYRING/
-	$ sick < SIGNED
-
-Trim a signature
-----------------
-
-You can discard a signature on a stream by using the `-t` (trim) flag. It will
-dump the input stream to stdout without the signature:
-
-	$ sick -t SIGNED > UNSIGNED
+License
+-------
+See the LICENSE file.
