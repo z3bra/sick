@@ -2,25 +2,25 @@ sick
 ====
 
 Sign and check streams cryptographically using the ed25519 algorithm.
-The sick(1) utility signs and verifies streams of data using ed25519
-signatures, either in binary or armored text format.
-You can also generate a public/private key pair
 
-Requirements
-------------
-* GNU/Make: https://www.gnu.org/software/make
-* ed26619 library: https://github.com/rdeker/ed25519
+The sick(1) utility signs and checks streams of data using ed25519
+signatures, either in binary or armored text format.
 
 Installation
 ------------
-To compile sick(1), you will need to get the 
+This program uses Orson Peters's ed25519 library, with Rob Deker's patch
+to be sodium/SUPERCOP compatible. A working copy is shipped for easier
+integration.
+
+Edit the `config.mk` file to match your setup, then run the following:
 
 	$ make
 	# make install
 
 Usage
 -----
-See the sick(1) manpage for details. As a quick reference:
+See the sick(1) manpage for details. The below commands are provided as
+a quick introduction:
 
 	# generate key pair
 	sick -g alice
@@ -28,9 +28,9 @@ See the sick(1) manpage for details. As a quick reference:
 	# sign and check a file
 	sick -sf alice.key README | sick -f alice.pub
 
-	# get the signature of a file
+	# get the base64 encoded signature of a file
 	sick -saf alice.key README | tail -c 156
 
 License
 -------
-See the LICENSE file.
+ISC License. See LICENSE file for copyright and license details.
