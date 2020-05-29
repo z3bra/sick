@@ -1,21 +1,16 @@
 sick
 ====
+Cryptographically sign and check files.
 
-Sign and check streams cryptographically using the ed25519 algorithm.
-
-The sick(1) utility signs and checks streams of data using ed25519
+This utility signs and checks streams of data using ed25519
 signatures, either in binary or armored text format.
 
-Installation
-------------
-This program uses Orson Peters's ed25519 library, with Rob Deker's patch
-to be sodium/SUPERCOP compatible. A working copy is shipped for easier
-integration.
-
-Edit the `config.mk` file to match your setup, then run the following:
-
-	$ make
-	# make install
+Features
+-----
+- Sign streams of data
+- Made to use with pipes
+- Generate either armored or binary signatures
+- Can use keys from keyring (`$KEYRING` directory)
 
 Usage
 -----
@@ -31,6 +26,13 @@ a quick introduction:
 	# get the base64 encoded signature of a file
 	sick -saf alice.key README | tail -c 156
 
-License
--------
-ISC License. See LICENSE file for copyright and license details.
+Installation
+------------
+Edit config.mk if needed, then build with the following command:
+
+	make install
+
+Require [ed25519][0]. A working copy is shipped for easier integration.
+
+[0]: https://github.com/rdeker/ed25519
+
