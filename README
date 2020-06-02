@@ -28,8 +28,9 @@ a quick introduction:
 
 Installation
 ------------
-Edit config.mk if needed, then build with the following command:
+Edit config.mk as needed, then build/install with the following commands:
 
+	make
 	make install
 
 Require [ed25519][0]. A working copy is shipped for easier integration.
