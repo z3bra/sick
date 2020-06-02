@@ -16,12 +16,11 @@ clean:V:
 
 install:V: sick
 	mkdir -p ${DESTDIR}${PREFIX}/bin
+	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	cp sick ${DESTDIR}${PREFIX}/bin/sick
+	cp sick.1 ${DESTDIR}${MANPREFIX}/man1/sick.1
 	chmod 755 ${DESTDIR}${PREFIX}/bin/sick
-	mkdir -p ${DESTDIR}${MANDIR}/man1
-	cp sick.1 ${DESTDIR}${MANDIR}/man1/sick.1
-	chmod 644 ${DESTDIR}${MANDIR}/man1/sick.1
 
 uninstall:V:
 	rm ${DESTDIR}${PREFIX}/bin/sick
-	rm ${DESTDIR}${MANDIR}/man1/sick.1
+	rm ${DESTDIR}${MANPREFIX}/man1/sick.1
