@@ -276,7 +276,7 @@ sign(FILE *fp, FILE *key)
 	if (verbose)
 		fprintf(stderr, "Signing stream (%lu bytes)\n", len);
 
-	ed25519_sign(sig, msg, len, priv);
+	ed25519_sign(sig, msg, len, NULL, priv);
 
 	/* write buffer to stdout .. */
 	fwrite(msg, 1, len, stdout);

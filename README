@@ -33,7 +33,6 @@ Edit config.mk as needed, then build/install with the following commands:
 	make
 	make install
 
-Require [ed25519][0]. A working copy is shipped for easier integration.
+Require [ed25519][0]. A working copy is shipped with the code.
 
-[0]: https://github.com/rdeker/ed25519
-
+[0]: https://github.com/orlp/ed25519
