@@ -68,18 +68,18 @@ Location of the keyring directory
 .Sh EXAMPLES
 .Bd -literal
 Generating a key pair:
-	$ sick -g $USER
+  sick -g $USER
 .Ed
-
+.Pp
 Signing a stream:
 .Bd -literal
-	$ sick -f ${USER}.key < FILE > SIGNED
+  sick -f ${USER}.key < FILE > SIGNED
 .Ed
-
+.Pp
 Checking a signed file (FILE will be empty if the signature doesn't match the
 public key):
 .Bd -literal
-	$ sick -f ${USER}.pub SIGNED > FILE
+  sick -f ${USER}.pub SIGNED > FILE
 .Ed
 .Sh SEE ALSO
 .Xr ed25519 7 ,
